@@ -77,7 +77,7 @@
 
     .form-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 2fr 1fr 1fr;
       gap: 1rem;
     }
 
@@ -187,7 +187,7 @@
       font-style: italic;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
       .form-row {
         grid-template-columns: 1fr;
       }
@@ -205,14 +205,14 @@
     </div>
 
     <div class="card">
-      <div class="card-title">第一步 — 检查环境与说明</div>
+      <div class="card-title">第一步 — 环境状态</div>
       <div class="status">
-        当前配置：已关联本地代码库中的 <code>./OnlineBible/OnlineBible/hgb/</code> 文件夹。请确保该路径及文件真实存在。
+        链接测试成功！已成功关联 GitHub 对应路径。如果预览中仍出现乱码，请在下方切换“文件编码”重新加载。
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">第二步 — 选择书卷与章节</div>
+      <div class="card-title">第二步 — 选择书卷与参数</div>
 
       <div class="form-row">
         <div class="form-group">
@@ -291,6 +291,16 @@
           <label>章节 Chapter</label>
           <input type="number" id="chapterInput" min="1" value="1">
         </div>
+
+        <div class="form-group">
+          <label>文件编码 Encoding</label>
+          <select id="encodingSelect">
+            <option value="utf-8">UTF-8 (默认)</option>
+            <option value="big5">Big5 (繁体旧格式)</option>
+            <option value="gbk">GBK / GB2312</option>
+            <option value="auto">自动探测 (Auto)</option>
+          </select>
+        </div>
       </div>
 
       <div class="btn-row" style="margin-top:1rem;">
@@ -358,7 +368,8 @@
     async function loadChapter() {
       const book = document.getElementById('bookSelect').value;
       const chapter = document.getElementById('chapterInput').value;
-      const path = `./OnlineBible/OnlineBible/hgb/${book}/${book}${chapter}.htm`;
+      const encodingMode = document.getElementById('encodingSelect').value;
+      const path = `https://imkelvinnnnn.github.io/BibleScriptureForCanva/OnlineBible/OnlineBible/hgb/${book}/${book}${chapter}.htm`;
 
       try {
         const response = await fetch(path);
@@ -370,17 +381,24 @@
         const arrayBuffer = await response.arrayBuffer();
         const uint8 = new Uint8Array(arrayBuffer);
 
-        const html = Encoding.convert(uint8, {
-          to: 'UNICODE',
-          from: 'GB2312',
-          type: 'string'
-        });
+        let html = '';
+        if (encodingMode === 'auto') {
+          const detected = Encoding.detect(uint8);
+          html = Encoding.convert(uint8, {
+            to: 'UNICODE',
+            from: detected,
+            type: 'string'
+          });
+        } else {
+          const decoder = new TextDecoder(encodingMode);
+          html = decoder.decode(uint8);
+        }
 
         parseHTML(html, book, chapter);
 
       } catch (err) {
         console.error(err);
-        alert(`无法读取章节文件：${path}\n请检查本地路径、文件名大小写是否完全一致。`);
+        alert(`无法读取章节文件：${path}\n请检查线上路径或刷新重试。`);
       }
     }
 
@@ -422,7 +440,7 @@
         body.innerHTML = `
           <tr>
             <td colspan="2">
-              <div class="empty">没有经文</div>
+              <div class="empty">没有经文，请尝试切换“文件编码”后重新加载</div>
             </td>
           </tr>
         `;
@@ -440,6 +458,7 @@
       `).join('');
     }
 
+    /* 导出部分保持不变 */
     function exportExcel() {
       if (parsedVerses.length === 0) {
         alert('没有经文可以导出，请先成功加载章节');
