@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>离线圣经 Excel 导出工具</title>
+  <title>Automated Canva Scripture Reading Slides</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -200,19 +200,11 @@
   <div class="container">
 
     <div class="header">
-      <h1>离线圣经 Excel 导出工具</h1>
-      <div class="subtitle">Offline Bible Scripture Exporter</div>
+      <h1>读经 Excel -> Canva</h1>
     </div>
 
     <div class="card">
-      <div class="card-title">第一步 — 环境状态</div>
-      <div class="status">
-        链接测试成功！已成功关联 GitHub 对应路径。如果预览中仍出现乱码，请在下方切换“文件编码”重新加载。
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">第二步 — 选择书卷与参数</div>
+      <div class="card-title">第一步 — 选择书卷与章节</div>
 
       <div class="form-row">
         <div class="form-group">
@@ -295,7 +287,7 @@
         <div class="form-group">
           <label>文件编码 Encoding</label>
           <select id="encodingSelect">
-            <option value="gbk" selected>GBK / GB2312</option>
+            <option value="gbk" selected>GBK / GB2312 (Default)</option>
             <option value="utf-8">UTF-8</option>
             <option value="big5">Big5 (繁体旧格式)</option>
           </select>
@@ -314,7 +306,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">第三步 — 经文预览</div>
+      <div class="card-title">第二步 — 经文预览</div>
 
       <div id="verseCount" class="status">
         0 节经文
