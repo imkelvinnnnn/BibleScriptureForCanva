@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canva Sermon Bulk Create Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg:        #f5f2ed;
+    --card:      #ffffff;
+    --accent:    #8b5e2a;
+    --accent-lt: #c49a5a;
+    --accent-dk: #5c3d18;
+    --text:      #2c1f0e;
+    --muted:     #8a7d6b;
+    --border:    #ddd5c8;
+    --success:   #3a7d44;
+    --danger:    #b94040;
+    --radius:    12px;
+    --shadow:    0 4px 24px rgba(139,94,42,0.10);
+    --shadow-lg: 0 8px 40px rgba(139,94,42,0.16);
+    --font-head: 'Cormorant Garamond', Georgia, serif;
+    --font-body: 'DM Sans', sans-serif;
+    --trans:     0.22s ease;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, var(--accent-dk) 0%, var(--accent) 60%, var(--accent-lt) 100%);
+    color: #fff;
+    padding: 40px 24px 36px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  header h1 {
+    font-family: var(--font-head);
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 700;
+    position: relative;
+  }
+  header p {
+    margin-top: 8px;
+    font-size: 0.95rem;
+    opacity: 0.85;
+    position: relative;
+  }
+
+  /* CONTAINER */
+  .container { max-width: 980px; margin: 0 auto; padding: 32px 16px 0; }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 28px 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-family: var(--font-head);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--accent-dk);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-lt));
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 0.85rem; flex-shrink: 0;
+  }
+
+  /* FORM */
+  label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  input[type="text"], textarea, input[type="number"] {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.97rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color var(--trans), box-shadow var(--trans);
+  }
+  input[type="text"]:focus, textarea:focus, input[type="number"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(139,94,42,0.12);
+    background: #fff;
+  }
+  textarea { min-height: 220px; line-height: 1.7; font-size: 0.95rem; resize: vertical; }
+
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+
+  /* Settings grid */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 560px) { .settings-grid { grid-template-columns: 1fr; } }
+
+  .setting-box {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .setting-box label {
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+  }
+  .setting-box input[type="number"] {
+    width: 100%;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent-dk);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--border);
+    border-radius: 0;
+    padding: 4px 0;
+    outline: none;
+    transition: border-color var(--trans);
+  }
+  .setting-box input[type="number"]:focus {
+    border-bottom-color: var(--accent);
+    box-shadow: none;
+    background: transparent;
+  }
+  .setting-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 22px;
+    border-radius: 8px;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 0.93rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--trans);
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-dk), var(--accent));
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(139,94,42,0.30);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--accent), var(--accent-lt));
+    box-shadow: 0 5px 18px rgba(139,94,42,0.38);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    background: var(--bg); color: var(--accent);
+    border: 1.5px solid var(--accent);
+  }
+  .btn-secondary:hover { background: var(--accent); color: #fff; transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent; color: var(--muted);
+    border: 1.5px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--bg); color: var(--text); }
+  .btn-success {
+    background: linear-gradient(135deg, #2d6b37, var(--success));
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(58,125,68,0.28);
+  }
+  .btn-success:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .btn:disabled { opacity: 0.45; pointer-events: none; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* STATS */
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #faf6f1, #f5f2ed);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    align-items: center;
+  }
+  .stat { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
+  .stat-num {
+    font-family: var(--font-head);
+    font-size: 1.7rem; font-weight: 700;
+    color: var(--accent); line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.72rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;
+  }
+  .stat-divider { width: 1px; height: 36px; background: var(--border); margin: 0 4px; }
+
+  /* TABLE */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  thead th {
+    background: linear-gradient(135deg, var(--accent-dk), var(--accent));
+    color: #fff; padding: 11px 14px;
+    text-align: left; font-weight: 500;
+    font-size: 0.8rem; letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  thead th:first-child { border-radius: 8px 0 0 0; }
+  thead th:last-child  { border-radius: 0 8px 0 0; }
+  tbody tr:nth-child(even) { background: #faf7f4; }
+  tbody tr:hover { background: #f5ede3; }
+  tbody td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top; line-height: 1.65;
+    word-break: break-word;
+  }
+  tbody td:first-child {
+    font-weight: 600; color: var(--accent);
+    text-align: center; width: 64px; white-space: nowrap;
+  }
+  tbody td:nth-child(2) { width: 110px; color: var(--muted); font-size: 0.85rem; }
+
+  /* lines badge inside table */
+  .lines-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 6px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .content-cell { white-space: pre-line; max-width: 480px; }
+  .line-major { color: var(--accent-dk); font-weight: 600; }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state .big-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 0.95rem; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 28px; right: 28px;
+    padding: 12px 20px; border-radius: 8px;
+    color: #fff; font-size: 0.9rem; font-weight: 500;
+    z-index: 9999; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(10px);
+    max-width: 340px; box-shadow: var(--shadow-lg);
+  }
+  #toast.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  #toast.success { background: var(--success); }
+  #toast.error   { background: var(--danger); }
+  #toast.info    { background: var(--accent); }
+
+  @media (max-width: 500px) {
+    .card { padding: 18px 14px; }
+    .actions { flex-direction: column; }
+    .btn { justify-content: center; }
+    .stats-bar { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✝ Canva Sermon Bulk Create</h1>
+  <p>Progressive reveal · character-aware line wrapping · 讲道幻灯片批量生成</p>
+</header>
+
+<div class="container">
+
+  <!-- INPUT -->
+  <div class="card">
+    <div class="card-title"><span class="icon">✏</span>Sermon Input · 讲道输入</div>
+
+    <div class="field">
+      <label>Theme · 主题</label>
+      <input type="text" id="theme" placeholder="证道主题">
+    </div>
+
+    <div class="field">
+      <label>Sermon Outline · 讲道大纲</label>
+      <textarea id="outline"></textarea>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="card">
+    <div class="card-title"><span class="icon">⚙</span>Slide Settings · 幻灯片设定</div>
+    <div class="settings-grid">
+
+      <div class="setting-box">
+        <label>Max display lines per slide · 每张最多显示行数</label>
+        <input type="number" id="max-lines" value="6" min="2" max="30">
+        <div class="setting-hint">Total visual rows that fit on one slide.</div>
+      </div>
+
+      <div class="setting-box">
+        <label>Characters per display line · 每行最多字符数</label>
+        <input type="number" id="chars-per-line" value="10" min="5" max="60">
+        <div class="setting-hint">
+          A point with 15 chars @ 10 chars/line = 2 display lines.<br>
+          Example line width: <span id="line-example">——————————</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="card">
+    <div class="actions">
+      <button class="btn btn-primary"  id="btn-generate">▶ Generate Slides</button>
+      <button class="btn btn-success"  id="btn-export"   disabled>⬇ Export Excel (.xlsx)</button>
+      <button class="btn btn-secondary" id="btn-copy"    disabled>⎘ Copy to Clipboard</button>
+      <button class="btn btn-ghost"    id="btn-clear">✕ Clear All</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="card" id="stats-card" style="display:none">
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-num" id="stat-slides">0</div>
+        <div class="stat-label">Slides</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num" id="stat-sections">0</div>
+        <div class="stat-label">Sections</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num" id="stat-subpoints">0</div>
+        <div class="stat-label">Sub-points</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-num" id="stat-groups">0</div>
+        <div class="stat-label">Groups</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="card">
+    <div class="card-title"><span class="icon">⊞</span>Live Preview · 实时预览</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Slide #</th>
+            <th>Theme · 主题</th>
+            <th>Content · 内容</th>
+          </tr>
+        </thead>
+        <tbody id="preview-body">
+          <tr><td colspan="3">
+            <div class="empty-state">
+              <div class="big-icon">📋</div>
+              <p>Enter your outline and click <strong>Generate Slides</strong> to preview.</p>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /.container -->
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+// ============================================================
+// STATE
+// ============================================================
+let generatedRows = []; // { slideNo, theme, content, displayLines }
+
+// ============================================================
+// DOM
+// ============================================================
+const elTheme        = document.getElementById('theme');
+const elOutline      = document.getElementById('outline');
+const elMaxLines     = document.getElementById('max-lines');
+const elCharsPerLine = document.getElementById('chars-per-line');
+const elLineExample  = document.getElementById('line-example');
+const elPreviewBody  = document.getElementById('preview-body');
+const elStatsCard    = document.getElementById('stats-card');
+const elStatSlides   = document.getElementById('stat-slides');
+const elStatSects    = document.getElementById('stat-sections');
+const elStatSubs     = document.getElementById('stat-subpoints');
+const elStatGroups   = document.getElementById('stat-groups');
+const btnGenerate    = document.getElementById('btn-generate');
+const btnExport      = document.getElementById('btn-export');
+const btnCopy        = document.getElementById('btn-copy');
+const btnClear       = document.getElementById('btn-clear');
+
+// ============================================================
+// LINE-WIDTH EXAMPLE — live ruler showing configured width
+// ============================================================
+function updateLineExample() {
+  const n = Math.max(1, parseInt(elCharsPerLine.value, 10) || 10);
+  // Use CJK full-width dash as ruler character
+  elLineExample.textContent = '一'.repeat(n);
+}
+elCharsPerLine.addEventListener('input', updateLineExample);
+updateLineExample();
+
+// ============================================================
+// DISPLAY-LINE COUNTER
+// How many visual lines does a single text item occupy?
+//
+// Strategy:
+//   • CJK characters (Unicode ranges for Chinese/Japanese/Korean) count as 1 unit each.
+//   • ASCII / Latin characters count as 0.5 units (half-width).
+//   • Parentheses, numbers, dots, spaces: 0.5 units.
+//   • Total units ÷ charsPerLine, rounded up = display lines.
+//
+// This matches how most CJK fonts render in fixed-width contexts.
+// ============================================================
+function displayLines(text, charsPerLine) {
+  if (!text) return 0;
+  let units = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0);
+    // CJK Unified Ideographs and common CJK ranges → full width (1 unit)
+    if (
+      (code >= 0x4E00  && code <= 0x9FFF)  ||  // CJK Unified Ideographs
+      (code >= 0x3400  && code <= 0x4DBF)  ||  // CJK Extension A
+      (code >= 0x20000 && code <= 0x2A6DF) ||  // CJK Extension B
+      (code >= 0xF900  && code <= 0xFAFF)  ||  // CJK Compatibility Ideographs
+      (code >= 0x3000  && code <= 0x303F)  ||  // CJK Symbols and Punctuation
+      (code >= 0xFF00  && code <= 0xFFEF)  ||  // Halfwidth and Fullwidth Forms
+      (code >= 0x3040  && code <= 0x309F)  ||  // Hiragana
+      (code >= 0x30A0  && code <= 0x30FF)       // Katakana
+    ) {
+      units += 1;
+    } else {
+      // ASCII, digits, Latin, punctuation → half-width
+      units += 0.5;
+    }
+  }
+  return Math.ceil(units / charsPerLine);
+}
+
+// ============================================================
+// PARSE OUTLINE
+// Major points: (N) at line start
+// Sub-points:   N.  at line start
+// Returns: [{ mainPoint, subPoints[] }]
+// ============================================================
+function parseOutline(text) {
+  const lines    = text.split('\n');
+  const sections = [];
+  let   current  = null;
+  const reMajor  = /^\(\d+\)\s*.+/;
+  const reSub    = /^\d+\.\s*.+/;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+
+    if (reMajor.test(line)) {
+      current = { mainPoint: line, subPoints: [] };
+      sections.push(current);
+    } else if (reSub.test(line)) {
+      if (!current) {
+        current = { mainPoint: '', subPoints: [] };
+        sections.push(current);
+      }
+      current.subPoints.push(line);
+    }
+  }
+  return sections;
+}
+
+// ============================================================
+// GENERATE SLIDES — Mode B (progressive reveal)
+//                   with character-aware line-height tracking
+//
+// Per section:
+//
+//   GROUP 1 (first group in section):
+//     Slide 0 : major point alone
+//     Slide 1 : major point + sub[0]       (if fits)
+//     Slide 2 : major point + sub[0..1]    (if fits)
+//     …
+//     When adding sub[i] would push displayLines > maxLines
+//     → close group 1, start group 2 with sub[i]
+//
+//   GROUP 2+ (overflow, no major point header):
+//     Slide 0 : sub[i] alone
+//     Slide 1 : sub[i..i+1]
+//     …same logic, same cap, no header
+//
+// Points are NEVER split — kept intact as atomic units.
+// ============================================================
+function generateSlides(sections, theme, maxLines, charsPerLine) {
+  const rows        = [];
+  let   slideNo     = 1;
+  let   totalGroups = 0;
+
+  for (const sec of sections) {
+
+    // ── Section with no sub-points: one slide, major point only
+    if (sec.subPoints.length === 0) {
+      if (sec.mainPoint) {
+        const dl = displayLines(sec.mainPoint, charsPerLine);
+        rows.push({ slideNo: slideNo++, theme, content: sec.mainPoint, displayLines: dl });
+        totalGroups++;
+      }
+      continue;
+    }
+
+    let subIdx       = 0;
+    let isFirstGroup = true;
+
+    while (subIdx < sec.subPoints.length) {
+
+      // ── Build one group using greedy fill
+      // Accumulated lines and accumulated items for this group
+      const headerText  = (isFirstGroup && sec.mainPoint) ? sec.mainPoint : '';
+      const headerLines = headerText ? displayLines(headerText, charsPerLine) : 0;
+
+      // Collect as many sub-points as fit alongside any previously accumulated ones
+      // We'll track the "current slide" lines as we progressively reveal
+      const groupItems = []; // sub-points collected for this group
+
+      // First: can the header alone fit? (only relevant for first group)
+      // The first slide is always just the header (first group) or first sub (later groups).
+      // We then progressively add sub-points until we can't fit one more.
+
+      let linesUsed = headerLines; // lines occupied by the header on the "full" slide of this group
+
+      while (subIdx < sec.subPoints.length) {
+        const sub     = sec.subPoints[subIdx];
+        const subDL   = displayLines(sub, charsPerLine);
+        const needed  = linesUsed + subDL;
+
+        if (needed > maxLines) {
+          // This sub-point doesn't fit → close group if we've collected at least one item
+          if (groupItems.length > 0) break;
+          // Edge case: single sub-point is longer than maxLines by itself
+          // → force-include it anyway (can't split) with a warning flag
+          groupItems.push({ text: sub, dl: subDL });
+          subIdx++;
+          linesUsed += subDL;
+          break;
+        }
+
+        groupItems.push({ text: sub, dl: subDL });
+        subIdx++;
+        linesUsed += subDL;
+      }
+
+      totalGroups++;
+
+      if (isFirstGroup && headerText) {
+        // Slide 0 of group 1: header alone
+        rows.push({
+          slideNo: slideNo++,
+          theme,
+          content: headerText,
+          displayLines: headerLines
+        });
+
+        // Progressive reveal: header + items[0..i]
+        for (let i = 0; i < groupItems.length; i++) {
+          const subset  = groupItems.slice(0, i + 1);
+          const content = [headerText, ...subset.map(x => x.text)].join('\n');
+          const dl      = headerLines + subset.reduce((s, x) => s + x.dl, 0);
+          rows.push({ slideNo: slideNo++, theme, content, displayLines: dl });
+        }
+
+      } else {
+        // Groups 2+: no header. Progressive reveal starting from first item alone.
+        for (let i = 0; i < groupItems.length; i++) {
+          const subset  = groupItems.slice(0, i + 1);
+          const content = subset.map(x => x.text).join('\n');
+          const dl      = subset.reduce((s, x) => s + x.dl, 0);
+          rows.push({ slideNo: slideNo++, theme, content, displayLines: dl });
+        }
+      }
+
+      isFirstGroup = false;
+    }
+  }
+
+  return { rows, totalGroups };
+}
+
+// ============================================================
+// RENDER PREVIEW
+// ============================================================
+const reMajorLine = /^\(\d+\)\s*/;
+
+function formatContentHtml(content) {
+  return content.split('\n').map(line =>
+    reMajorLine.test(line)
+      ? `<span class="line-major">${escHtml(line)}</span>`
+      : escHtml(line)
+  ).join('\n');
+}
+
+function renderPreview(rows) {
+  if (!rows.length) {
+    elPreviewBody.innerHTML = `<tr><td colspan="3"><div class="empty-state"><div class="big-icon">📭</div><p>No slides generated. Check your outline format.</p></div></td></tr>`;
+    return;
+  }
+  elPreviewBody.innerHTML = rows.map(row => `
+    <tr>
+      <td>${row.slideNo}<span class="lines-badge">${row.displayLines}L</span></td>
+      <td>${escHtml(row.theme)}</td>
+      <td class="content-cell">${formatContentHtml(row.content)}</td>
+    </tr>
+  `).join('');
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats(rows, sections, totalGroups) {
+  const totalSubs = sections.reduce((n, s) => n + s.subPoints.length, 0);
+  elStatSlides.textContent  = rows.length;
+  elStatSects.textContent   = sections.length;
+  elStatSubs.textContent    = totalSubs;
+  elStatGroups.textContent  = totalGroups;
+  elStatsCard.style.display = 'block';
+}
+
+// ============================================================
+// GENERATE
+// ============================================================
+btnGenerate.addEventListener('click', () => {
+  const theme        = elTheme.value.trim();
+  const outline      = elOutline.value.trim();
+  const maxLines     = Math.max(2, parseInt(elMaxLines.value, 10)     || 6);
+  const charsPerLine = Math.max(5, parseInt(elCharsPerLine.value, 10) || 10);
+
+  if (!outline) { showToast('Please enter a sermon outline.', 'error'); return; }
+
+  const sections = parseOutline(outline);
+  if (!sections.length) { showToast('No valid outline points found. Use (1)/(2) for major points and 1./2. for sub-points.', 'error'); return; }
+
+  const { rows, totalGroups } = generateSlides(sections, theme, maxLines, charsPerLine);
+  generatedRows = rows;
+
+  renderPreview(rows);
+  updateStats(rows, sections, totalGroups);
+
+  btnExport.disabled = rows.length === 0;
+  btnCopy.disabled   = rows.length === 0;
+
+  showToast(`✓ Generated ${rows.length} slides across ${sections.length} sections.`, 'success');
+});
+
+// ============================================================
+// EXPORT EXCEL
+// ============================================================
+btnExport.addEventListener('click', () => {
+  if (!generatedRows.length) return;
+
+  const data = [
+    ['SlideNo', 'Theme', 'Content', 'DisplayLines'],
+    ...generatedRows.map(r => [r.slideNo, r.theme, r.content, r.displayLines])
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 8 }, { wch: 18 }, { wch: 70 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'SermonSlides');
+
+  const d   = new Date();
+  const ymd = d.getFullYear()
+            + String(d.getMonth() + 1).padStart(2, '0')
+            + String(d.getDate()).padStart(2, '0');
+  XLSX.writeFile(wb, `Canva_Sermon_${ymd}.xlsx`);
+  showToast(`⬇ Exported Canva_Sermon_${ymd}.xlsx`, 'success');
+});
+
+// ============================================================
+// COPY TSV
+// ============================================================
+btnCopy.addEventListener('click', async () => {
+  if (!generatedRows.length) return;
+  const text = [
+    'SlideNo\tTheme\tContent',
+    ...generatedRows.map(r => `${r.slideNo}\t${r.theme}\t${r.content.replace(/\n/g, ' | ')}`)
+  ].join('\n');
+
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = Object.assign(document.createElement('textarea'), { value: text });
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  showToast(`⎘ Copied ${generatedRows.length} rows to clipboard.`, 'info');
+});
+
+// ============================================================
+// CLEAR
+// ============================================================
+btnClear.addEventListener('click', () => {
+  elTheme.value = ''; elOutline.value = ''; generatedRows = [];
+  elPreviewBody.innerHTML = `<tr><td colspan="3"><div class="empty-state"><div class="big-icon">📋</div><p>Enter your outline and click <strong>Generate Slides</strong> to preview.</p></div></td></tr>`;
+  elStatsCard.style.display = 'none';
+  btnExport.disabled = true; btnCopy.disabled = true;
+  showToast('Cleared.', 'info');
+});
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3400);
+}
+
+// Auto-generate on load
+window.addEventListener('load', () => setTimeout(() => btnGenerate.click(), 200));
+</script>
+</body>
+</html>

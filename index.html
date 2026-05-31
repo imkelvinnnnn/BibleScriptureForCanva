@@ -1,495 +1,193 @@
 <!DOCTYPE html>
 <html lang="zh">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Automated Canva Scripture Reading Slides</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BibleScriptureForCanva</title>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/encoding.js/2.1.0/encoding.min.js"></script>
+<style>
+:root {
+  --bg: #f5f2ed;
+  --surface: #ffffff;
+  --surface2: #f0ece6;
+  --border: rgba(0, 0, 0, 0.09);
+  --text: #1e1a15;
+  --text-muted: #6b6560;
+  --accent: #8b5e2a;
+  --success: #2e7d4f;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
 
-  <style>
-    :root {
-      --bg: #f5f2ed;
-      --surface: #ffffff;
-      --surface2: #f0ece6;
-      --border: rgba(0, 0, 0, 0.09);
-      --text: #1e1a15;
-      --text-muted: #6b6560;
-      --accent: #8b5e2a;
-      --success: #2e7d4f;
-      --radius: 10px;
-      --radius-lg: 16px;
-    }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Georgia, "Microsoft YaHei", "宋体", serif;
+  min-height: 100vh;
+  padding: 3rem 1rem;
+}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: Georgia, "Microsoft YaHei", "宋体", serif;
-      min-height: 100vh;
-      padding: 2rem 1rem 4rem;
-    }
+.container {
+  max-width: 1000px;
+  margin: auto;
+}
 
-    .container {
-      max-width: 900px;
-      margin: auto;
-    }
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
 
-    .header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
+.logo {
+  font-size: 2rem;
+  color: var(--accent);
+  margin-bottom: 0.8rem;
+}
 
-    .header h1 {
-      font-weight: 400;
-      margin-bottom: 0.5rem;
-    }
+.header h1 {
+  font-weight: 400;
+  margin-bottom: 0.5rem;
+}
 
-    .subtitle {
-      color: var(--text-muted);
-      font-style: italic;
-      font-size: 0.9rem;
-    }
+.subtitle {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.95rem;
+}
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      margin-bottom: 1.2rem;
-    }
+.modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
 
-    .card-title {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      color: var(--accent);
-      margin-bottom: 1rem;
-    }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  transition: all 0.2s ease;
+}
 
-    .form-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
-      gap: 1rem;
-    }
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+}
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
+.card-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
 
-    label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
+.card-title {
+  color: var(--accent);
+  font-size: 1.15rem;
+  margin-bottom: 0.75rem;
+}
 
-    select,
-    input,
-    button {
-      font-family: inherit;
-    }
+.card-desc {
+  color: var(--text-muted);
+  line-height: 1.7;
+  font-size: 0.92rem;
+  margin-bottom: 1.5rem;
+}
 
-    select,
-    input[type="number"] {
-      padding: 0.7rem 0.9rem;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      font-size: 0.95rem;
-      outline: none;
-    }
+.btn {
+  display: inline-block;
+  text-decoration: none;
+  background: var(--accent);
+  color: white;
+  padding: 0.75rem 1.2rem;
+  border-radius: var(--radius);
+  transition: opacity 0.2s;
+}
 
-    button {
-      border: none;
-      border-radius: var(--radius);
-      padding: 0.75rem 1.2rem;
-      cursor: pointer;
-      font-size: 0.92rem;
-      transition: opacity 0.2s;
-    }
+.btn:hover {
+  opacity: 0.9;
+}
 
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-    }
+.footer {
+  text-align: center;
+  margin-top: 3rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
 
-    .btn-primary:hover {
-      opacity: 0.92;
-    }
+.version {
+  margin-top: 0.4rem;
+}
 
-    .btn-success {
-      background: var(--success);
-      color: white;
-    }
-
-    .btn-success:hover {
-      opacity: 0.92;
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .status {
-      margin-top: 1rem;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th {
-      background: var(--surface2);
-      color: var(--accent);
-      text-align: left;
-      padding: 0.8rem 1rem;
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
-    }
-
-    td {
-      padding: 0.8rem 1rem;
-      border-top: 1px solid var(--border);
-      line-height: 1.7;
-      vertical-align: top;
-    }
-
-    .ref {
-      white-space: nowrap;
-      color: var(--accent);
-      font-weight: bold;
-    }
-
-    .empty {
-      padding: 2rem;
-      text-align: center;
-      color: var(--text-muted);
-      font-style: italic;
-    }
-
-    @media (max-width: 768px) {
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+@media (max-width: 768px) {
+  body {
+    padding: 2rem 1rem;
+  }
+}
+</style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <div class="header">
-      <h1>读经 Excel -> Canva</h1>
+  <div class="header">
+    <div class="logo">✦ ✦ ✦</div>
+    <h1>Bible Scripture For Canva</h1>
+    <div class="subtitle">
+      Church Media Tools Collection
+    </div>
+  </div>
+
+  <div class="modules">
+
+    <div class="card">
+      <div class="card-icon">📖</div>
+
+      <div class="card-title">
+        Scripture Canva Generator
+      </div>
+
+      <div class="card-desc">
+        Load Bible verses from your offline Bible database and export them
+        into Canva Bulk Create format for scripture slides.
+      </div>
+
+      <a href="scripturecanva.html" class="btn">
+        Open Module
+      </a>
     </div>
 
     <div class="card">
-      <div class="card-title">第一步 — 选择书卷与章节</div>
+      <div class="card-icon">🎤</div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>书卷 Book</label>
-          <select id="bookSelect">
-            <option value="gen">创世记</option>
-            <option value="exo">出埃及记</option>
-            <option value="lev">利未记</option>
-            <option value="num">民数记</option>
-            <option value="deu">申命记</option>
-            <option value="jos">约书亚记</option>
-            <option value="jdg">士师记</option>
-            <option value="rut">路得记</option>
-            <option value="1sa">撒母耳记上</option>
-            <option value="2sa">撒母耳记下</option>
-            <option value="1ki">列王纪上</option>
-            <option value="2ki">列王纪下</option>
-            <option value="1ch">历代志上</option>
-            <option value="2ch">历代志下</option>
-            <option value="ezr">以斯拉记</option>
-            <option value="neh">尼希米记</option>
-            <option value="est">以斯帖记</option>
-            <option value="job">约伯记</option>
-            <option value="psa">诗篇</option>
-            <option value="pro">箴言</option>
-            <option value="ecc">传道书</option>
-            <option value="sng">雅歌</option>
-            <option value="isa">以赛亚书</option>
-            <option value="jer">耶利米书</option>
-            <option value="lam">耶利米哀歌</option>
-            <option value="ezk">以西结书</option>
-            <option value="dan">但以理书</option>
-            <option value="hos">何西阿书</option>
-            <option value="jol">约珥书</option>
-            <option value="amo">阿摩司书</option>
-            <option value="oba">俄巴底亚书</option>
-            <option value="jon">约拿书</option>
-            <option value="mic">弥迦书</option>
-            <option value="nam">那鸿书</option>
-            <option value="hab">哈巴谷书</option>
-            <option value="zep">西番雅书</option>
-            <option value="hag">哈该书</option>
-            <option value="zec">撒迦利亚书</option>
-            <option value="mal">玛拉基书</option>
-            <option value="mat">马太福音</option>
-            <option value="mrk">马可福音</option>
-            <option value="luk">路加福音</option>
-            <option value="jhn">约翰福音</option>
-            <option value="act">使徒行传</option>
-            <option value="rom">罗马书</option>
-            <option value="1co">哥林多前书</option>
-            <option value="2co">哥林多后书</option>
-            <option value="gal">加拉太书</option>
-            <option value="eph">以弗所书</option>
-            <option value="php">腓立比书</option>
-            <option value="col">歌罗西书</option>
-            <option value="1th">帖撒罗尼迦前书</option>
-            <option value="2th">帖撒罗尼迦后书</option>
-            <option value="1ti">提摩太前书</option>
-            <option value="2ti">提摩太后书</option>
-            <option value="tit">提多书</option>
-            <option value="phm">腓利门书</option>
-            <option value="heb">希伯来书</option>
-            <option value="jas">雅各书</option>
-            <option value="1pe">彼得前书</option>
-            <option value="2pe">彼得后书</option>
-            <option value="1jn">约翰一书</option>
-            <option value="2jn">约翰二书</option>
-            <option value="3jn">约翰三书</option>
-            <option value="jud">犹大书</option>
-            <option value="rev">启示录</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>章节 Chapter</label>
-          <input type="number" id="chapterInput" min="1" value="1">
-        </div>
-
-        <div class="form-group">
-          <label>文件编码 Encoding</label>
-          <select id="encodingSelect">
-            <option value="gbk" selected>GBK / GB2312 (Default)</option>
-            <option value="utf-8">UTF-8</option>
-            <option value="big5">Big5 (繁体旧格式)</option>
-          </select>
-        </div>
+      <div class="card-title">
+        Sermon Canva Generator
       </div>
 
-      <div class="btn-row" style="margin-top:1rem;">
-        <button class="btn-primary" onclick="loadChapter()">
-          加载章节
-        </button>
-
-        <button class="btn-success" onclick="exportExcel()">
-          导出 Excel
-        </button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">第二步 — 经文预览</div>
-
-      <div id="verseCount" class="status">
-        0 节经文
+      <div class="card-desc">
+        Convert sermon outlines into Canva Bulk Create slides.
+        Supports progressive reveal, grouped points and sermon slide generation.
       </div>
 
-      <div class="table-wrap" style="margin-top:1rem;">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:160px;">Reference</th>
-              <th>Verse</th>
-            </tr>
-          </thead>
-
-          <tbody id="previewBody">
-            <tr>
-              <td colspan="2">
-                <div class="empty">
-                  请先加载章节
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <a href="sermoncanva.html" class="btn">
+        Open Module
+      </a>
     </div>
 
   </div>
 
-  <script>
-    let parsedVerses = [];
+  <div class="footer">
+    BibleScriptureForCanva
+    <div class="version">
+      Version 1.0
+    </div>
+  </div>
 
-    const BOOK_NAMES = {
-      gen: '创世记', exo: '出埃及记', lev: '利未记', num: '民数记', deu: '申命记',
-      jos: '约书亚记', jdg: '士师记', rut: '路得记', '1sa': '撒母耳记上', '2sa': '撒母耳记下',
-      '1ki': '列王纪上', '2ki': '列王纪下', '1ch': '历代志上', '2ch': '历代志下', ezr: '以斯拉记',
-      neh: '尼希米记', est: '以斯帖记', job: '约伯记', psa: '诗篇', pro: '箴言',
-      ecc: '传道书', sng: '雅歌', isa: '以赛亚书', jer: '耶利米书', lam: '耶利米哀歌',
-      ezk: '以西结书', dan: '但以理书', hos: '何西阿书', jol: '约珥书', amo: '阿摩司书',
-      oba: '俄巴底亚书', jon: '约拿书', mic: '弥迦书', nam: '那鸿书', hab: '哈巴谷书',
-      zep: '西番雅书', hag: '哈该书', zec: '撒迦利亚书', mal: '玛拉基书', mat: '马太福音',
-      mrk: '马可福音', luk: '路加福音', jhn: '约翰福音', act: '使徒行传', rom: '罗马书',
-      '1co': '哥林多前书', '2co': '哥林多后书', gal: '加拉太书', eph: '以弗所书', php: '腓立比书',
-      col: '歌罗西书', '1th': '帖撒罗尼迦前书', '2th': '帖撒罗尼迦后书', '1ti': '提摩太前书', '2ti': '提摩太后书',
-      tit: '提多书', phm: '腓利门书', heb: '希伯来书', jas: '雅各书', '1pe': '彼得前书',
-      '2pe': '彼得后书', '1jn': '约翰一书', '2jn': '约翰二书', '3jn': '约翰三书', jud: '犹大书',
-      rev: '启示录'
-    };
-
-    async function loadChapter() {
-      const book = document.getElementById('bookSelect').value;
-      const chapter = document.getElementById('chapterInput').value;
-      const encodingMode = document.getElementById('encodingSelect').value;
-      const path = `https://imkelvinnnnn.github.io/BibleScriptureForCanva/OnlineBible/OnlineBible/hgb/${book}/${book}${chapter}.htm`;
-
-      try {
-        const response = await fetch(path);
-
-        if (!response.ok) {
-          throw new Error('File not found');
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
-        const uint8 = new Uint8Array(arrayBuffer);
-
-        let html = '';
-        if (encodingMode === 'auto') {
-          const detected = Encoding.detect(uint8);
-          html = Encoding.convert(uint8, {
-            to: 'UNICODE',
-            from: detected,
-            type: 'string'
-          });
-        } else {
-          const decoder = new TextDecoder(encodingMode);
-          html = decoder.decode(uint8);
-        }
-
-        parseHTML(html, book, chapter);
-
-      } catch (err) {
-        console.error(err);
-        alert(`无法读取章节文件：${path}\n请检查线上路径或刷新重试。`);
-      }
-    }
-
-    function parseHTML(html, book, chapter) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const rows = doc.querySelectorAll('tr');
-      const verses = [];
-
-      rows.forEach(row => {
-        const tds = row.querySelectorAll('td');
-        if (tds.length < 2) return;
-
-        const refText = tds[0].textContent.replace(/\s+/g, '').trim();
-        const verseText = tds[1].textContent.replace(/[\s\u3000]+/g, '').trim();
-
-        if (!refText || !verseText) return;
-
-        const match = refText.match(/(\d+):(\d+)/);
-        if (!match) return;
-
-        const verseNum = match[2];
-
-        verses.push({
-          ref: `${BOOK_NAMES[book]} ${chapter}:${verseNum}`,
-          text: verseText
-        });
-      });
-
-      parsedVerses = verses;
-      renderPreview();
-    }
-
-    function renderPreview() {
-      const body = document.getElementById('previewBody');
-      const count = document.getElementById('verseCount');
-
-      if (parsedVerses.length === 0) {
-        body.innerHTML = `
-          <tr>
-            <td colspan="2">
-              <div class="empty">没有经文，请尝试切换“文件编码”后重新加载</div>
-            </td>
-          </tr>
-        `;
-        count.textContent = `0 节经文`;
-        return;
-      }
-
-      count.textContent = `${parsedVerses.length} 节经文`;
-
-      body.innerHTML = parsedVerses.map(v => `
-        <tr>
-          <td class="ref">${escapeHTML(v.ref)}</td>
-          <td>${escapeHTML(v.text)}</td>
-        </tr>
-      `).join('');
-    }
-
-    /* 导出部分保持不变 */
-    function exportExcel() {
-      if (parsedVerses.length === 0) {
-        alert('没有经文可以导出，请先成功加载章节');
-        return;
-      }
-
-      const wsData = [
-        ['书', '经文']
-      ];
-
-      parsedVerses.forEach(v => {
-        wsData.push([v.ref, v.text]);
-      });
-
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-      ws['!cols'] = [
-        { wch: 24 },
-        { wch: 120 }
-      ];
-
-      XLSX.utils.book_append_sheet(wb, ws, 'Scripture');
-
-      const book = document.getElementById('bookSelect').value;
-      const chapter = document.getElementById('chapterInput').value;
-      const filename = `${BOOK_NAMES[book]}_第${chapter}章.xlsx`;
-
-      XLSX.writeFile(wb, filename);
-    }
-
-    function escapeHTML(str) {
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-  </script>
+</div>
 
 </body>
-
 </html>
